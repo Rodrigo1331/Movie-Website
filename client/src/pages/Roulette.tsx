@@ -9,13 +9,14 @@ import { useToast } from '../components/Toast';
 import { EmptyState, ErrorState, PageLoader, Spinner } from '../components/ui';
 import { cx, formatRuntime } from '../lib/format';
 import { useDocumentTitle } from '../lib/hooks';
-import { buildReel, offsetFor, pickWinner, secureRandomInt } from '../lib/roulette';
+import { cycleReel, offsetFor, pickWinner, planSpin, shuffle } from '../lib/roulette';
 
 const ITEM = 140; // poster width in px
 const GAP = 12;
 const STEP = ITEM + GAP;
-const PAD = 6; // items kept on each side of the centre when a new spin starts
-const REEL_LENGTH = 48;
+const PAD = 6; // items kept before the centre when a new spin starts
+const IDLE_LENGTH = PAD * 2 + 12;
+const MIN_SPIN = 30; // minimum number of posters travelled per spin
 const SPIN_MS = 4600;
 
 const RUNTIME_OPTIONS = [
@@ -27,21 +28,6 @@ const RUNTIME_OPTIONS = [
 
 const isWantToWatch = (s: Section) => s.slug === 'want-to-watch' || s.name.toLowerCase() === 'want to watch';
 const isCurrentlyWatching = (s: Section) => s.slug === 'currently-watching' || s.name.toLowerCase() === 'currently watching';
-
-/** Idle strip: the pool shuffled and repeated so the reel always looks full. */
-function idleReel(pool: Movie[]): Movie[] {
-  if (pool.length === 0) return [];
-  const out: Movie[] = [];
-  while (out.length < PAD * 2 + 12) {
-    const batch = [...pool];
-    for (let i = batch.length - 1; i > 0; i--) {
-      const j = secureRandomInt(i + 1);
-      [batch[i], batch[j]] = [batch[j]!, batch[i]!];
-    }
-    out.push(...batch);
-  }
-  return out;
-}
 
 type Phase = 'idle' | 'spinning' | 'done';
 
@@ -71,8 +57,11 @@ export function RoulettePage() {
   );
   const poolKey = pool.map((m) => m.id).join(',');
 
-  // Reel state
-  const [reel, setReel] = useState<Movie[]>([]);
+  // Reel state: the reel is a window onto one fixed cyclic order (1, 2, 3, 1, 2, 3…),
+  // shuffled once whenever the set of candidates changes.
+  const [order, setOrder] = useState<Movie[]>([]);
+  const [win, setWin] = useState({ start: 0, length: 0 });
+  const reel = useMemo(() => cycleReel(order, win.start, win.length), [order, win]);
   const [pos, setPos] = useState({ index: PAD, jitter: 0 });
   const [animate, setAnimate] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -96,7 +85,8 @@ export function RoulettePage() {
   // Rebuild the idle reel whenever the set of candidates changes
   useEffect(() => {
     clearTimeout(fallbackTimer.current);
-    setReel(idleReel(pool));
+    setOrder(shuffle(pool));
+    setWin({ start: 0, length: IDLE_LENGTH });
     setPos({ index: PAD, jitter: 0 });
     setAnimate(false);
     setPhase('idle');
@@ -115,21 +105,24 @@ export function RoulettePage() {
   };
 
   const spin = () => {
-    if (pool.length === 0 || phase === 'spinning') return;
-    const picked = pickWinner(pool, noRepeat ? seen : new Set<number>());
+    const n = order.length;
+    if (n === 0 || phase === 'spinning') return;
+    const picked = pickWinner(order, noRepeat ? seen : new Set<number>());
     setSeen(picked.seen);
-    setCycledNote(noRepeat && picked.cycled && pool.length > 1);
+    setCycledNote(noRepeat && picked.cycled && n > 1);
     setWinnerId(picked.winner.id);
 
-    // Start from what is on screen now so the spin begins seamlessly.
-    const prefix = reel.slice(pos.index - PAD, pos.index + PAD + 1);
-    const { reel: next, winnerIndex } = buildReel(pool, picked.winner, { prefix, length: REEL_LENGTH });
+    // Continue the cycle from the film currently centred so the spin starts seamlessly.
+    const currentPos = (((win.start + pos.index) % n) + n) % n;
+    const winnerPos = order.findIndex((m) => m.id === picked.winner.id);
+    const plan = planSpin(n, currentPos, winnerPos, { pad: PAD, minSpin: MIN_SPIN });
+    const winnerIndex = plan.winnerIndex;
     setAnimate(false);
-    setReel(next);
-    setPos({ index: PAD, jitter: pos.jitter });
+    setWin({ start: plan.start, length: plan.length });
+    setPos({ index: plan.centreIndex, jitter: pos.jitter });
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion || pool.length === 1) {
+    if (reduceMotion || n === 1) {
       setPos({ index: winnerIndex, jitter: 0 });
       setPhase('done');
       return;

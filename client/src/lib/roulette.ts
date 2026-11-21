@@ -15,6 +15,18 @@ export const secureRandomInt: RandomInt = (max) => {
   return x % max;
 };
 
+const mod = (a: number, n: number) => ((a % n) + n) % n;
+
+/** Fisher–Yates shuffle (returns a new array). */
+export function shuffle<T>(items: readonly T[], random: RandomInt = secureRandomInt): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = random(i + 1);
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
 /**
  * Picks a winner from `pool`, skipping ids in `seen` (no-repeat mode).
  * When every item has already been seen, the cycle starts over.
@@ -31,25 +43,30 @@ export function pickWinner<T extends { id: number }>(pool: T[], seen: ReadonlySe
 }
 
 /**
- * Builds the reel strip: optional `prefix` (what is currently on screen, so the spin starts seamlessly),
- * random filler, the winner at `winnerIndex`, and a short tail so the strip never ends on screen.
- * Neighbours of the winner are never the winner itself (when the pool allows it), so the landing is unambiguous.
+ * The reel is always a window onto one fixed cyclic order (1, 2, 3, 1, 2, 3…).
+ * `start` is the position in `order` of the reel's first item.
  */
-export function buildReel<T extends { id: number }>(
-  pool: T[],
-  winner: T,
-  options: { prefix?: T[]; length?: number; winnerIndex?: number; random?: RandomInt } = {},
+export function cycleReel<T>(order: readonly T[], start: number, length: number): T[] {
+  if (order.length === 0) return [];
+  return Array.from({ length }, (_, i) => order[mod(start + i, order.length)]!);
+}
+
+/**
+ * Plans a spin that continues the cycle from the item currently centred (`currentPos`) and lands on
+ * `winnerPos`, travelling at least `minSpin` items. The new reel keeps `pad` items before the centre,
+ * so the first frame of the spin looks identical to what is on screen.
+ */
+export function planSpin(
+  orderLength: number,
+  currentPos: number,
+  winnerPos: number,
+  { pad = 6, minSpin = 30, tail = 7 }: { pad?: number; minSpin?: number; tail?: number } = {},
 ) {
-  const { prefix = [], length = 44, random = secureRandomInt } = options;
-  const winnerIndex = options.winnerIndex ?? length - 6;
-  if (winnerIndex < prefix.length || winnerIndex >= length) throw new RangeError('winnerIndex out of range');
-
-  const others = pool.filter((m) => m.id !== winner.id);
-  const filler = () => (others.length ? others : pool)[random((others.length ? others : pool).length)]!;
-
-  const reel: T[] = [...prefix];
-  while (reel.length < length) reel.push(reel.length === winnerIndex ? winner : filler());
-  return { reel, winnerIndex };
+  if (orderLength <= 0) throw new RangeError('orderLength must be positive');
+  const distance = mod(winnerPos - currentPos, orderLength);
+  const laps = Math.max(0, Math.ceil((minSpin - distance) / orderLength));
+  const winnerIndex = pad + distance + laps * orderLength;
+  return { start: mod(currentPos - pad, orderLength), centreIndex: pad, winnerIndex, length: winnerIndex + tail + 1 };
 }
 
 /** Horizontal translation that centres reel item `index` in a viewport of `viewportWidth`. */
