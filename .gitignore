@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local database
+server/data/*.db
+server/data/*.db-*
