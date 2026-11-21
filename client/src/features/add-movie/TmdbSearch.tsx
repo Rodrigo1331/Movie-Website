@@ -88,11 +88,11 @@ function ResultCard({ result, inLibrary }: { result: TmdbSearchResult; inLibrary
       <div className="relative overflow-hidden rounded-xl ring-1 ring-white/6 transition-all duration-300 group-hover:-translate-y-1 group-hover:ring-gold-500/50">
         <Poster src={result.posterUrl} title={result.title} />
         {inLibrary ? (
-          <span className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1 rounded-md bg-emerald-500/90 py-1 text-[11px] font-bold text-ink-950">
+          <span className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-1 rounded-md bg-emerald-500/90 py-1 text-[11px] font-bold text-night">
             <CircleCheck className="size-3.5" /> In library
           </span>
         ) : (
-          <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-semibold text-snow opacity-0 transition-opacity group-hover:opacity-100">
             Select
           </span>
         )}

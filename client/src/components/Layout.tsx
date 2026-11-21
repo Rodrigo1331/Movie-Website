@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router';
-import { Clapperboard, Dices, FolderOpen, LayoutDashboard, Library, Plus } from 'lucide-react';
+import { Clapperboard, Dices, FolderOpen, LayoutDashboard, Library, Moon, Plus, Sun } from 'lucide-react';
 import { cx } from '../lib/format';
+import { useTheme } from '../lib/theme';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -21,7 +22,7 @@ export function Layout() {
       <header className="sticky top-0 z-40 border-b border-white/5 bg-ink-950/75 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-6 sm:px-6">
           <Link to="/" className="group flex shrink-0 items-center gap-2.5">
-            <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-ink-950 shadow-lg shadow-gold-500/20 transition-transform group-hover:rotate-[-8deg]">
+            <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-night shadow-lg shadow-gold-500/20 transition-transform group-hover:rotate-[-8deg]">
               <Clapperboard className="size-5" strokeWidth={2.4} />
             </span>
             <span className="hidden font-display text-xl font-semibold tracking-tight text-white sm:block">Reelbook</span>
@@ -51,6 +52,7 @@ export function Layout() {
             ))}
           </nav>
 
+          <ThemeToggle />
           <Link to="/movies/new" className="btn-primary px-3 sm:px-4">
             <Plus className="size-4" strokeWidth={2.6} />
             <span className="hidden sm:inline">Add movie</span>
@@ -70,6 +72,16 @@ export function Layout() {
       </footer>
       <ScrollRestoration />
     </div>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  const next = theme === 'dark' ? 'light' : 'dark';
+  return (
+    <button type="button" onClick={toggle} className="btn-ghost size-10 shrink-0 p-0" aria-label={`Switch to ${next} theme`} title={`Switch to ${next} theme`}>
+      {theme === 'dark' ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
+    </button>
   );
 }
 

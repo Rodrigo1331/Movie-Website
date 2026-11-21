@@ -19,6 +19,11 @@ toggle. The dashboard quote keeps spoilers hidden too.
 fair and unbiased. "Don't repeat picks" cycles through every film before any repeats. **Watch it now** adds the winner
 to *Currently Watching* without removing it from Want to Watch.
 
+### Light / dark theme
+
+The sun/moon button in the header switches between the dark (default) and light theme. Your choice is saved in the
+browser and applied before the page paints, so there's no flash.
+
 ## Requirements
 
 - **Node.js 23.6 or newer** (developed on Node 26). The server runs TypeScript directly via Node's type stripping

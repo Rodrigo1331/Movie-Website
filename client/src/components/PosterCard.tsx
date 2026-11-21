@@ -19,8 +19,8 @@ export function PosterCard({ movie, index = 0, className }: { movie: Movie; inde
         <Poster src={movie.posterUrl} title={movie.title} className="transition-transform duration-500 group-hover:scale-[1.04]" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div className="absolute inset-x-0 bottom-0 translate-y-2 p-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          {movie.genres.length > 0 && <p className="line-clamp-1 text-[11px] font-medium text-ink-200">{movie.genres.slice(0, 3).join(' · ')}</p>}
-          {movie.director && <p className="mt-0.5 line-clamp-1 text-[11px] text-ink-400">{movie.director}</p>}
+          {movie.genres.length > 0 && <p className="line-clamp-1 text-[11px] font-medium text-snow/90">{movie.genres.slice(0, 3).join(' · ')}</p>}
+          {movie.director && <p className="mt-0.5 line-clamp-1 text-[11px] text-snow/60">{movie.director}</p>}
         </div>
         <RatingBadge score={movie.rating} className="absolute top-2 right-2" />
       </div>

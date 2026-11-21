@@ -8,7 +8,7 @@ export function RatingBadge({ score, className }: { score: number | null; classN
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1 rounded-md bg-ink-950/85 px-1.5 py-0.5 text-xs font-bold tabular-nums ring-1 backdrop-blur-md',
+        'inline-flex items-center gap-1 rounded-md bg-night/85 px-1.5 py-0.5 text-xs font-bold tabular-nums ring-1 backdrop-blur-md',
         className,
       )}
       style={{ color, '--tw-ring-color': `${color}55` } as React.CSSProperties}
