@@ -14,6 +14,7 @@ import { EditMoviePage } from './pages/EditMovie';
 import { LibraryPage } from './pages/Library';
 import { MovieDetailPage } from './pages/MovieDetail';
 import { NotFoundPage } from './pages/NotFound';
+import { RoulettePage } from './pages/Roulette';
 import { SectionsPage } from './pages/Sections';
 
 const queryClient = new QueryClient({
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: 'library', element: <LibraryPage /> },
       { path: 'sections', element: <SectionsPage /> },
+      { path: 'roulette', element: <RoulettePage /> },
       { path: 'movies/new', element: <AddMoviePage /> },
       { path: 'movies/:id', element: <MovieDetailPage /> },
       { path: 'movies/:id/edit', element: <EditMoviePage /> },

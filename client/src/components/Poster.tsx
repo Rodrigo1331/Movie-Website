@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Clapperboard } from 'lucide-react';
 import { cx } from '../lib/format';
 
@@ -11,26 +11,32 @@ interface PosterProps {
 
 /** Movie poster with a stylised fallback when there is no image or it fails to load. */
 export function Poster({ src, title, className, eager }: PosterProps) {
-  const [failed, setFailed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    setFailed(false);
-    setLoaded(false);
+  // Track state per src so a new src starts fresh without a reset effect.
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const img = useRef<HTMLImageElement>(null);
+
+  // Cached images are complete before paint: mark them loaded to avoid a skeleton flash.
+  useLayoutEffect(() => {
+    if (src && img.current?.complete && img.current.naturalWidth > 0) setLoadedSrc(src);
   }, [src]);
 
-  const showImage = src && !failed;
+  const loaded = !!src && loadedSrc === src;
+  const showImage = src && failedSrc !== src;
   return (
     <div className={cx('relative aspect-[2/3] overflow-hidden bg-ink-800', className)}>
       {showImage ? (
         <>
           {!loaded && <div className="skeleton absolute inset-0" />}
           <img
+            ref={img}
             src={src}
             alt={`${title} poster`}
             loading={eager ? 'eager' : 'lazy'}
             decoding="async"
-            onLoad={() => setLoaded(true)}
-            onError={() => setFailed(true)}
+            draggable={false}
+            onLoad={() => setLoadedSrc(src)}
+            onError={() => setFailedSrc(src)}
             className={cx('size-full object-cover transition-opacity duration-500', loaded ? 'opacity-100' : 'opacity-0')}
           />
         </>

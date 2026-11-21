@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
-import { ArrowRight, Calendar, Clock, Film, PenLine, Plus, Popcorn, Star, Tags } from 'lucide-react';
+import { ArrowRight, Calendar, Clock, Dices, Film, PenLine, Plus, Popcorn, Star, Tags } from 'lucide-react';
 import type { Movie, Stats } from '@moviesite/shared';
-import { useStats } from '../api/hooks';
+import { useSections, useStats } from '../api/hooks';
 import { Page } from '../components/Layout';
 import { Poster } from '../components/Poster';
 import { PosterRow } from '../components/PosterRow';
@@ -46,6 +46,7 @@ export function DashboardPage() {
       {featured && <Hero movie={featured} />}
       <Page className="space-y-14 pt-6 sm:pt-8">
         <StatTiles stats={stats} />
+        <RouletteCta />
 
         {stats.recentlyReviewed.length > 0 && (
           <PosterRow
@@ -105,6 +106,29 @@ function Hero({ movie }: { movie: Movie }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function RouletteCta() {
+  const { data: sections } = useSections();
+  const wantToWatch = sections?.find((s) => s.slug === 'want-to-watch' || s.name.toLowerCase() === 'want to watch');
+  if (!wantToWatch || wantToWatch.movieCount === 0) return null;
+  return (
+    <Link
+      to="/roulette"
+      className="group relative flex animate-fade-up items-center gap-4 overflow-hidden rounded-2xl border border-gold-500/20 bg-gradient-to-r from-gold-500/10 via-ink-900 to-ink-900 p-5 transition-colors hover:border-gold-500/40"
+    >
+      <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-gold-500/15 text-gold-400 transition-transform duration-500 group-hover:rotate-[20deg]">
+        <Dices className="size-6" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-display text-lg font-semibold text-ink-100">Can’t decide what to watch?</p>
+        <p className="text-sm text-ink-400">
+          Spin the roulette — {wantToWatch.movieCount} {wantToWatch.movieCount === 1 ? 'film' : 'films'} waiting in {wantToWatch.name}.
+        </p>
+      </div>
+      <ArrowRight className="size-5 shrink-0 text-gold-400 transition-transform group-hover:translate-x-1" />
+    </Link>
   );
 }
 

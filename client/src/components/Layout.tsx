@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router';
-import { Clapperboard, FolderOpen, LayoutDashboard, Library, Plus } from 'lucide-react';
+import { Clapperboard, Dices, FolderOpen, LayoutDashboard, Library, Plus } from 'lucide-react';
 import { cx } from '../lib/format';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/library', label: 'Library', icon: Library, end: false },
   { to: '/sections', label: 'Sections', icon: FolderOpen, end: false },
+  { to: '/roulette', label: 'Roulette', icon: Dices, end: false },
 ];
 
 export function Layout() {

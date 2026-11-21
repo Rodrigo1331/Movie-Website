@@ -25,8 +25,13 @@ function invalidateLibrary(qc: QueryClient, movie?: Movie) {
   ]);
 }
 
-export const useMovies = (query: MovieListQuery) =>
-  useQuery({ queryKey: keys.movies(query), queryFn: () => api.movies.list(query), placeholderData: keepPreviousData });
+export const useMovies = (query: MovieListQuery, options: { enabled?: boolean } = {}) =>
+  useQuery({
+    queryKey: keys.movies(query),
+    queryFn: () => api.movies.list(query),
+    placeholderData: keepPreviousData,
+    enabled: options.enabled ?? true,
+  });
 
 export const useMovie = (id: number) =>
   useQuery({ queryKey: keys.movie(id), queryFn: () => api.movies.get(id), enabled: Number.isFinite(id) && id > 0 });

@@ -12,6 +12,13 @@ In the editor, select text and click **Mark as spoiler** (or press `Ctrl+Shift+S
 On the movie page, hidden passages show as blacked-out bars that reveal on click, and there's a **Reveal all / Hide all**
 toggle. The dashboard quote keeps spoilers hidden too.
 
+### Movie roulette
+
+**Roulette** (`/roulette`) spins a poster reel and picks a random film from your **Want to Watch** section
+(or any section you choose), optionally filtered by genre and maximum runtime. Picks use the Web Crypto API, so they're
+fair and unbiased. "Don't repeat picks" cycles through every film before any repeats. **Watch it now** adds the winner
+to *Currently Watching* without removing it from Want to Watch.
+
 ## Requirements
 
 - **Node.js 23.6 or newer** (developed on Node 26). The server runs TypeScript directly via Node's type stripping
