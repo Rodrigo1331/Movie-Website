@@ -39,15 +39,21 @@ export const todayIso = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-/** Colour scale for scores, from red (poor) to green (great). */
+/**
+ * Colour scale for scores, from red (poor) to green (great). Returns a CSS variable so each theme can use
+ * shades that stay readable on its background (see --rating-* in index.css).
+ */
 export function ratingColor(score: number | null): string {
-  if (score === null) return '#52525c';
-  if (score >= 8.5) return '#34d399';
-  if (score >= 7) return '#a3e635';
-  if (score >= 5.5) return '#e8b04b';
-  if (score >= 4) return '#fb923c';
-  return '#f87171';
+  if (score === null) return 'var(--rating-none)';
+  if (score >= 8.5) return 'var(--rating-great)';
+  if (score >= 7) return 'var(--rating-good)';
+  if (score >= 5.5) return 'var(--rating-mid)';
+  if (score >= 4) return 'var(--rating-weak)';
+  return 'var(--rating-poor)';
 }
+
+/** A translucent version of a colour (works with CSS variables, unlike hex alpha suffixes). */
+export const fadeColor = (color: string, percent: number) => `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 
 export function ratingLabel(score: number | null): string {
   if (score === null) return 'Not rated';

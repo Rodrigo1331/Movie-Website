@@ -41,7 +41,7 @@ export function RatingInput({ value, onChange }: { value: number | null; onChang
             value={value ?? 0}
             onChange={(e) => onChange(Number(e.target.value))}
             className="rating-range w-full"
-            style={{ '--range-color': value === null ? '#52525c' : color, '--range-pct': `${(value ?? 0) * 10}%` } as React.CSSProperties}
+            style={{ '--range-color': value === null ? 'var(--rating-none)' : color, '--range-pct': `${(value ?? 0) * 10}%` } as React.CSSProperties}
           />
           <div className="mt-2 flex justify-between px-0.5 text-[10px] text-ink-500 tabular-nums">
             {Array.from({ length: 11 }, (_, i) => (

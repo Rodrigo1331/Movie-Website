@@ -48,6 +48,32 @@
   }
 }
 
+/* Score colours (red → green). Badges on posters keep the bright set via .rating-on-dark. */
+:root,
+.rating-on-dark {
+  --rating-none: #52525c;
+  --rating-great: #34d399;
+  --rating-good: #a3e635;
+  --rating-mid: #e8b04b;
+  --rating-weak: #fb923c;
+  --rating-poor: #f87171;
+}
+:root[data-theme='light'] {
+  --rating-none: #8a867e;
+  --rating-great: #047857;
+  --rating-good: #4d7c0f;
+  --rating-mid: #a16207;
+  --rating-weak: #c2410c;
+  --rating-poor: #b91c1c;
+}
+:root[data-theme='light'] .rating-on-dark {
+  --rating-great: #34d399;
+  --rating-good: #a3e635;
+  --rating-mid: #e8b04b;
+  --rating-weak: #fb923c;
+  --rating-poor: #f87171;
+}
+
 /* Light theme: the ink scale is inverted, and "white" (used for max-contrast text and faint overlays)
    becomes near-black, so existing utilities flip without per-component changes. */
 :root[data-theme='light'] {

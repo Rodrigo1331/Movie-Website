@@ -1,5 +1,5 @@
 import { Star } from 'lucide-react';
-import { cx, formatRating, ratingColor, ratingLabel } from '../lib/format';
+import { cx, fadeColor, formatRating, ratingColor, ratingLabel } from '../lib/format';
 
 /** Compact score pill used on poster cards. */
 export function RatingBadge({ score, className }: { score: number | null; className?: string }) {
@@ -8,10 +8,10 @@ export function RatingBadge({ score, className }: { score: number | null; classN
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1 rounded-md bg-night/85 px-1.5 py-0.5 text-xs font-bold tabular-nums ring-1 backdrop-blur-md',
+        'rating-on-dark inline-flex items-center gap-1 rounded-md bg-night/85 px-1.5 py-0.5 text-xs font-bold tabular-nums ring-1 backdrop-blur-md',
         className,
       )}
-      style={{ color, '--tw-ring-color': `${color}55` } as React.CSSProperties}
+      style={{ color, '--tw-ring-color': fadeColor(color, 33) } as React.CSSProperties}
     >
       <Star className="size-3 fill-current" />
       {formatRating(score)}
@@ -41,7 +41,7 @@ export function RatingRing({ score, size = 96, showLabel = true }: { score: numb
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={circumference * (1 - pct)}
-            style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.2,0.7,0.2,1)', filter: `drop-shadow(0 0 8px ${color}55)` }}
+            style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.2,0.7,0.2,1)', filter: `drop-shadow(0 0 8px ${fadeColor(color, 33)})` }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
