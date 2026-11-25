@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { z } from 'zod';
 import { idParamSchema, listQuerySchema, movieInputSchema, movieSectionsSchema, movieUpdateSchema, parse } from '../../lib/validation.ts';
 import type { MovieChanges, MovieFields, MoviesRepository } from './repository.ts';
+import type { ExternalRatingsService } from '../external/service.ts';
 
 type MovieInput = z.output<typeof movieInputSchema>;
 
@@ -23,8 +24,8 @@ function splitInput(input: MovieInput): { fields: MovieFields; relations: MovieC
   };
 }
 
-export function moviesRoutes(deps: { movies: MoviesRepository }) {
-  const { movies } = deps;
+export function moviesRoutes(deps: { movies: MoviesRepository; external?: ExternalRatingsService }) {
+  const { movies, external } = deps;
   return async (app: FastifyInstance) => {
     app.get('/movies', async (req) => movies.list(parse(listQuerySchema, req.query)));
 
@@ -34,8 +35,10 @@ export function moviesRoutes(deps: { movies: MoviesRepository }) {
 
     app.post('/movies', async (req, reply) => {
       const { fields, relations } = splitInput(parse(movieInputSchema, req.body));
+      const movie = movies.create(fields, relations);
       reply.code(201);
-      return movies.create(fields, relations);
+      if (!external) return movie;
+      return external.refreshQuietly(movie, (error) => req.log.warn({ err: error }, 'Could not fetch outside ratings'));
     });
 
     app.patch('/movies/:id', async (req) => {

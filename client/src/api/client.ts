@@ -1,5 +1,7 @@
 import type {
   ApiErrorBody,
+  ExternalRefreshResult,
+  ExternalStatus,
   LibraryFacets,
   Movie,
   MovieInput,
@@ -75,6 +77,11 @@ export const api = {
     remove: (id: number) => request<void>('DELETE', `/sections/${id}`),
   },
   stats: () => request<Stats>('GET', '/stats'),
+  external: {
+    status: () => request<ExternalStatus>('GET', '/external-ratings/status'),
+    refresh: (movieId: number) => request<Movie>('POST', `/movies/${movieId}/external-ratings`),
+    refreshMissing: (after: number) => request<ExternalRefreshResult>('POST', '/external-ratings/refresh-missing', { after, limit: 10 }),
+  },
   tmdb: {
     status: () => request<TmdbStatus>('GET', '/tmdb/status'),
     search: (q: string, page = 1) => request<TmdbSearchResponse>('GET', `/tmdb/search${qs({ q, page })}`),

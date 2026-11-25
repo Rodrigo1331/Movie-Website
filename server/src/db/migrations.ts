@@ -100,6 +100,23 @@ export const migrations: Migration[] = [
       ) WITHOUT ROWID;
     `,
   },
+  {
+    version: 3,
+    name: 'external_ratings',
+    sql: `
+      CREATE TABLE external_ratings (
+        movie_id        INTEGER PRIMARY KEY REFERENCES movies(id) ON DELETE CASCADE,
+        imdb_id         TEXT,
+        imdb_rating     REAL    CHECK (imdb_rating IS NULL OR (imdb_rating >= 0 AND imdb_rating <= 10)),
+        imdb_votes      INTEGER,
+        rotten_tomatoes INTEGER CHECK (rotten_tomatoes IS NULL OR (rotten_tomatoes >= 0 AND rotten_tomatoes <= 100)),
+        metacritic      INTEGER CHECK (metacritic IS NULL OR (metacritic >= 0 AND metacritic <= 100)),
+        tmdb_rating     REAL    CHECK (tmdb_rating IS NULL OR (tmdb_rating >= 0 AND tmdb_rating <= 10)),
+        tmdb_votes      INTEGER,
+        fetched_at      TEXT    NOT NULL
+      );
+    `,
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

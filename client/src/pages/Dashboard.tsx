@@ -6,6 +6,7 @@ import { Page } from '../components/Layout';
 import { Poster } from '../components/Poster';
 import { PosterRow } from '../components/PosterRow';
 import { RatingRing } from '../components/Rating';
+import { RatingComparison } from '../components/RatingComparison';
 import { SpoilerText } from '../components/SpoilerText';
 import { stripSpoilers } from '../lib/spoilers';
 import { EmptyState, ErrorState, PageLoader } from '../components/ui';
@@ -64,6 +65,8 @@ export function DashboardPage() {
             action={<Link to="/library?sort=rating" className="btn-ghost px-2 text-xs">See all</Link>}
           />
         )}
+
+        <RatingComparison comparison={stats.comparison} />
 
         <div className="grid gap-6 lg:grid-cols-3">
           <Distribution stats={stats} />

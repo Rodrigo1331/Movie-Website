@@ -35,6 +35,9 @@ interface RawDetails {
   runtime?: number | null;
   genres?: { id: number; name: string }[];
   credits?: { crew?: { job: string; name: string }[] };
+  imdb_id?: string | null;
+  vote_average?: number;
+  vote_count?: number;
 }
 
 export type TmdbSearchItem = Omit<TmdbSearchResult, 'inLibraryId'>;
@@ -44,6 +47,8 @@ export interface TmdbClient {
   readonly configured: boolean;
   search(query: string, page?: number): Promise<{ page: number; totalPages: number; totalResults: number; results: TmdbSearchItem[] }>;
   details(tmdbId: number): Promise<TmdbDetailsItem>;
+  /** TMDB's own user score and the film's IMDb id. */
+  ratingInfo(tmdbId: number): Promise<{ imdbId: string | null; voteAverage: number; voteCount: number }>;
 }
 
 const validDate = (d: string | undefined) => (d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null);
@@ -145,6 +150,14 @@ export function createTmdbClient(options: { token: string | null; fetchFn?: Fetc
         backdropUrl: backdropUrl(m.backdrop_path),
         runtime: m.runtime || null,
         genres: (m.genres ?? []).map((g) => g.name),
+      };
+    },
+    async ratingInfo(tmdbId) {
+      const m = await request<RawDetails>(`/movie/${tmdbId}`, { language: 'en-US' });
+      return {
+        imdbId: m.imdb_id && /^tt\d+$/.test(m.imdb_id) ? m.imdb_id : null,
+        voteAverage: m.vote_average ?? 0,
+        voteCount: m.vote_count ?? 0,
       };
     },
   };

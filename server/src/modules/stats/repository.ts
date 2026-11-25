@@ -1,8 +1,64 @@
-import type { Stats } from '@moviesite/shared';
+import type { ComparisonPoint, RatingComparison, Stats } from '@moviesite/shared';
 import type { DB } from '../../db/database.ts';
 import type { MoviesRepository } from '../movies/repository.ts';
 
 const round1 = (v: unknown) => (v == null ? null : Math.round(Number(v) * 10) / 10);
+
+const round2 = (v: number) => Math.round(v * 100) / 100;
+const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+/** Pearson correlation; null when there are too few points or no variation. */
+export function correlation(xs: number[], ys: number[]): number | null {
+  if (xs.length < 3) return null;
+  const mx = mean(xs);
+  const my = mean(ys);
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < xs.length; i++) {
+    const dx = xs[i]! - mx;
+    const dy = ys[i]! - my;
+    sxy += dx * dy;
+    sxx += dx * dx;
+    syy += dy * dy;
+  }
+  return sxx === 0 || syy === 0 ? null : round2(sxy / Math.sqrt(sxx * syy));
+}
+
+function comparison(db: DB): RatingComparison {
+  const points = db
+    .prepare(
+      `SELECT m.id, m.title, m.release_year, m.poster_url, rt.score AS mine, er.imdb_rating AS imdb,
+              COALESCE(er.metacritic / 10.0, er.rotten_tomatoes / 10.0) AS critics
+         FROM ratings rt
+         JOIN movies m ON m.id = rt.movie_id
+         JOIN external_ratings er ON er.movie_id = m.id
+        WHERE er.imdb_rating IS NOT NULL OR er.metacritic IS NOT NULL OR er.rotten_tomatoes IS NOT NULL
+        ORDER BY m.title COLLATE NOCASE`,
+    )
+    .all()
+    .map(
+      (r): ComparisonPoint => ({
+        id: Number(r.id),
+        title: String(r.title),
+        releaseYear: r.release_year == null ? null : Number(r.release_year),
+        posterUrl: r.poster_url == null ? null : String(r.poster_url),
+        mine: Number(r.mine),
+        imdb: r.imdb == null ? null : Number(r.imdb),
+        critics: r.critics == null ? null : Math.round(Number(r.critics) * 10) / 10,
+      }),
+    );
+  const withImdb = points.filter((p): p is ComparisonPoint & { imdb: number } => p.imdb !== null);
+  const mine = withImdb.map((p) => p.mine);
+  const imdb = withImdb.map((p) => p.imdb);
+  const has = withImdb.length > 0;
+  return {
+    compared: withImdb.length,
+    myAverage: has ? round2(mean(mine)) : null,
+    imdbAverage: has ? round2(mean(imdb)) : null,
+    averageGap: has ? round2(mean(mine) - mean(imdb)) : null,
+    correlation: correlation(mine, imdb),
+    points,
+  };
+}
 
 export function createStatsRepository(db: DB, movies: MoviesRepository) {
   return {
@@ -66,6 +122,7 @@ export function createStatsRepository(db: DB, movies: MoviesRepository) {
         topDirectors,
         recentlyReviewed: movies.list({ reviewedOnly: true, sort: 'reviewed', order: 'desc', limit: 12 }),
         highestRated: movies.list({ ratedOnly: true, sort: 'rating', order: 'desc', limit: 12 }),
+        comparison: comparison(db),
       };
     },
   };

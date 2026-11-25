@@ -11,23 +11,29 @@ import { sectionsRoutes } from './modules/sections/routes.ts';
 import { createStatsRepository } from './modules/stats/repository.ts';
 import { statsRoutes } from './modules/stats/routes.ts';
 import type { TmdbClient } from './modules/tmdb/client.ts';
+import { createOmdbClient, type OmdbClient } from './modules/external/omdb.ts';
+import { externalRoutes } from './modules/external/routes.ts';
+import { createExternalRatingsService } from './modules/external/service.ts';
 import { tmdbRoutes } from './modules/tmdb/routes.ts';
 
 export interface AppOptions {
   db: DB;
   tmdb: TmdbClient;
+  /** OMDb client for IMDb / Rotten Tomatoes / Metacritic scores (optional). */
+  omdb?: OmdbClient;
   /** If set and the folder exists, the built React app is served from it. */
   clientDistPath?: string;
   logger?: FastifyServerOptions['logger'];
 }
 
 export async function buildApp(options: AppOptions) {
-  const { db, tmdb, clientDistPath, logger = false } = options;
+  const { db, tmdb, omdb = createOmdbClient({ apiKey: null }), clientDistPath, logger = false } = options;
   const app = Fastify({ logger, bodyLimit: 1024 * 1024 });
 
   const sections = createSectionsRepository(db);
   const movies = createMoviesRepository(db, sections);
   const stats = createStatsRepository(db, movies);
+  const external = createExternalRatingsService({ db, movies, tmdb, omdb });
 
   app.setErrorHandler((error, req, reply) => {
     if (error instanceof AppError) {
@@ -45,7 +51,8 @@ export async function buildApp(options: AppOptions) {
     async (api) => {
       api.get('/health', async () => ({ status: 'ok' }));
       await api.register(sectionsRoutes({ sections }));
-      await api.register(moviesRoutes({ movies }));
+      await api.register(moviesRoutes({ movies, external }));
+      await api.register(externalRoutes({ external }));
       await api.register(reviewsRoutes({ movies }));
       await api.register(statsRoutes({ stats }));
       await api.register(tmdbRoutes({ tmdb, movies }));

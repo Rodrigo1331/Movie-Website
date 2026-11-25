@@ -15,6 +15,7 @@ const SORTS: { value: SortField; label: string }[] = [
   { value: 'rating', label: 'Rating' },
   { value: 'release', label: 'Release date' },
   { value: 'title', label: 'Title' },
+  { value: 'imdbGap', label: 'My rating vs IMDb' },
 ];
 const RATING_FILTERS = [9, 8, 7, 6, 5];
 

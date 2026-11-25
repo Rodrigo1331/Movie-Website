@@ -26,6 +26,17 @@ and enjoyment (0–10, each optional). Once any aspect is rated, the overall rat
 calculated automatically: the average of the rated aspects, rounded **up** to the next 0.5 (9.0 → 9, 9.1 → 9.5,
 9.6 → 10). The movie page shows the breakdown. Unticking the box removes the aspect scores when you save.
 
+### Compare with IMDb, Rotten Tomatoes & Metacritic
+
+With an OMDb key configured (see below), each film's IMDb rating, Rotten Tomatoes Tomatometer, Metascore and TMDB
+score are fetched when you add it and cached in the database. The movie page shows them next to your rating with the
+gap; the dashboard compares your averages with IMDb's, shows how closely your taste tracks it, plots your rating against
+IMDb's and lists the films you liked more than IMDb and the ones critics liked more than you. Library → sort by
+**My rating vs IMDb**. Films already in your library can be filled in with **Fetch scores** on the dashboard.
+
+Note: OMDb currently doesn't return Rotten Tomatoes scores for most films; where it's missing the card shows “–” and
+the critics comparison uses Metacritic.
+
 ### Light / dark theme
 
 The sun/moon button in the header switches between the dark (default) and light theme. Your choice is saved in the
@@ -87,11 +98,20 @@ How the key is kept safe:
 Posters and backdrops are loaded from TMDB's public image CDN (`image.tmdb.org`). Those URLs aren't secret.
 This product uses the TMDB API but is not endorsed or certified by TMDB.
 
+## OMDb API key (IMDb / Rotten Tomatoes / Metacritic)
+
+1. Get a free key at <https://www.omdbapi.com/apikey.aspx> (1,000 requests/day) and click the activation link in the email.
+2. Add it to `.env`: `OMDB_API_KEY=abc12345`, then restart the server.
+
+It's handled exactly like the TMDB token: only the server reads it, it's never sent to the browser, and `.env` is gitignored.
+Films are matched by IMDb id (from TMDB) when available, otherwise by title and year.
+
 ## Configuration (`.env`)
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `TMDB_API_TOKEN` | *(empty)* | TMDB v4 read token or v3 key. Optional. |
+| `OMDB_API_KEY` | *(empty)* | OMDb key for IMDb / Rotten Tomatoes / Metacritic scores. Optional. |
 | `PORT` | `3001` | API/server port |
 | `HOST` | `127.0.0.1` | Bind address (local only by default) |
 | `DATABASE_PATH` | `server/data/movies.db` | SQLite file (relative paths are resolved from the repo root) |
@@ -108,6 +128,7 @@ are tracked in `schema_migrations`.
 | `genres`, `movie_genres` | Genres (case-insensitive unique) and the many-to-many link |
 | `ratings` | One score per movie, `REAL` with `CHECK (0 ≤ score ≤ 10)` |
 | `reviews` | One written review per movie, plus the date watched |
+| `external_ratings` | Cached IMDb / Rotten Tomatoes / Metacritic / TMDB scores per movie, with fetch time |
 | `aspect_ratings` | Optional per-aspect scores (story, characters, acting, soundtrack, enjoyment), 0–10 |
 | `sections`, `movie_sections` | Custom sections (ordered) and many-to-many membership |
 
@@ -142,7 +163,7 @@ client/src/
 
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/api/movies?q&genre&year&minRating&maxRating&section&sort&order&limit` | List/filter/sort (`sort`: rating, release, title, added, reviewed) |
+| GET | `/api/movies?q&genre&year&minRating&maxRating&section&sort&order&limit` | List/filter/sort (`sort`: rating, release, title, added, reviewed, imdbGap) |
 | GET | `/api/movies/facets` | Genres (with counts) and years present in the library |
 | POST | `/api/movies` | Add a movie (optionally with rating, review, date watched, sections) |
 | GET / PATCH / DELETE | `/api/movies/:id` | Read / update / delete |
@@ -151,5 +172,8 @@ client/src/
 | GET / POST | `/api/sections` | List / create |
 | PATCH / DELETE | `/api/sections/:id` | Rename / delete |
 | PUT | `/api/sections/order` | Reorder (`{ ids: [...] }`) |
-| GET | `/api/stats` | Dashboard statistics |
+| GET | `/api/stats` | Dashboard statistics (incl. comparison with IMDb / critics) |
+| GET | `/api/external-ratings/status` | Which outside sources are configured, films without scores |
+| POST | `/api/movies/:id/external-ratings` | Re-fetch outside scores for one film |
+| POST | `/api/external-ratings/refresh-missing` | Fetch scores for films without them, in batches (`{ after, limit }`) |
 | GET | `/api/tmdb/status`, `/api/tmdb/search?q&page`, `/api/tmdb/movie/:tmdbId` | TMDB proxy |

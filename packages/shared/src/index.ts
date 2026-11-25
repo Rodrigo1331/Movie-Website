@@ -19,6 +19,63 @@ export type RatingAspect = 'story' | 'characters' | 'acting' | 'soundtrack' | 'e
 /** Optional per-aspect scores (0–10). Unrated aspects are simply absent. */
 export type AspectRatings = Partial<Record<RatingAspect, number>>;
 
+/** Scores from other sites, cached on the server. Each value is null when that site has no score. */
+export interface ExternalRatings {
+  imdbId: string | null;
+  /** IMDb user rating, 0–10 */
+  imdb: number | null;
+  imdbVotes: number | null;
+  /** Rotten Tomatoes Tomatometer, 0–100 % */
+  rottenTomatoes: number | null;
+  /** Metacritic Metascore, 0–100 */
+  metacritic: number | null;
+  /** TMDB user score, 0–10 */
+  tmdb: number | null;
+  tmdbVotes: number | null;
+  fetchedAt: string;
+}
+
+export interface ExternalStatus {
+  omdb: boolean;
+  tmdb: boolean;
+  /** Films that have never had their scores fetched */
+  missing: number;
+}
+
+export interface ExternalRefreshResult {
+  updated: number;
+  failed: number;
+  /** Pass back as `after` to continue */
+  nextAfter: number;
+  remaining: number;
+  /** Set when the run stopped early (bad key, daily limit…) */
+  stoppedReason: string | null;
+}
+
+/** One rated film with outside scores, for the comparison chart and lists. */
+export interface ComparisonPoint {
+  id: number;
+  title: string;
+  releaseYear: number | null;
+  posterUrl: string | null;
+  mine: number;
+  imdb: number | null;
+  /** Critics' score on a 0–10 scale: Metacritic, else Rotten Tomatoes */
+  critics: number | null;
+}
+
+export interface RatingComparison {
+  /** Rated films that also have an IMDb score */
+  compared: number;
+  myAverage: number | null;
+  imdbAverage: number | null;
+  /** Average of (my rating − IMDb), positive = you rate higher */
+  averageGap: number | null;
+  /** Pearson correlation between your ratings and IMDb's (−1…1), null with fewer than 3 films */
+  correlation: number | null;
+  points: ComparisonPoint[];
+}
+
 export interface Review {
   body: string;
   dateWatched: string | null;
@@ -41,6 +98,7 @@ export interface Movie {
   rating: number | null;
   ratedAt: string | null;
   aspectRatings: AspectRatings;
+  externalRatings: ExternalRatings | null;
   review: Review | null;
   sections: SectionRef[];
   lastReviewedAt: string | null;
@@ -77,7 +135,7 @@ export interface ReviewInput {
   dateWatched: string | null;
 }
 
-export type SortField = 'rating' | 'release' | 'title' | 'added' | 'reviewed';
+export type SortField = 'rating' | 'release' | 'title' | 'added' | 'reviewed' | 'imdbGap';
 export type SortOrder = 'asc' | 'desc';
 
 export interface MovieListQuery {
@@ -112,6 +170,7 @@ export interface Stats {
   topDirectors: { name: string; count: number; averageRating: number | null }[];
   recentlyReviewed: Movie[];
   highestRated: Movie[];
+  comparison: RatingComparison;
 }
 
 export interface TmdbSearchResult {

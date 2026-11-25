@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type { Movie, MovieInput, MovieListQuery, MovieUpdate, ReviewInput } from '@moviesite/shared';
 import { api } from './client';
@@ -9,6 +10,7 @@ export const keys = {
   sections: ['sections'] as const,
   stats: ['stats'] as const,
   tmdbStatus: ['tmdb', 'status'] as const,
+  externalStatus: ['external', 'status'] as const,
   tmdbSearch: (q: string, page: number) => ['tmdb', 'search', q, page] as const,
   tmdbDetails: (id: number) => ['tmdb', 'details', id] as const,
 };
@@ -22,6 +24,7 @@ function invalidateLibrary(qc: QueryClient, movie?: Movie) {
     qc.invalidateQueries({ queryKey: keys.facets }),
     qc.invalidateQueries({ queryKey: keys.sections }),
     qc.invalidateQueries({ queryKey: ['tmdb', 'search'] }),
+    qc.invalidateQueries({ queryKey: keys.externalStatus }),
   ]);
 }
 
@@ -112,4 +115,54 @@ export function useSectionMutations() {
     reorder: useMutation({ mutationFn: api.sections.reorder, onSuccess: refresh }),
     remove: useMutation({ mutationFn: api.sections.remove, onSuccess: refresh }),
   };
+}
+
+export const useExternalStatus = () => useQuery({ queryKey: keys.externalStatus, queryFn: api.external.status });
+
+/** Re-fetch IMDb / Rotten Tomatoes / Metacritic / TMDB scores for one film. */
+export function useRefreshExternal(id: number) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: () => api.external.refresh(id), onSuccess: (m) => invalidateLibrary(qc, m) });
+}
+
+export interface BackfillState {
+  running: boolean;
+  done: number;
+  total: number;
+  error: string | null;
+}
+
+/** Fetches outside scores for every film that doesn't have them yet, in small batches, with progress. */
+export function useExternalBackfill() {
+  const qc = useQueryClient();
+  const [state, setState] = useState<BackfillState>({ running: false, done: 0, total: 0, error: null });
+
+  const run = useCallback(
+    async (total: number) => {
+      setState({ running: true, done: 0, total, error: null });
+      let after = 0;
+      let done = 0;
+      let error: string | null = null;
+      try {
+        for (;;) {
+          const r = await api.external.refreshMissing(after);
+          done += r.updated + r.failed;
+          setState((s) => ({ ...s, done }));
+          if (r.stoppedReason) {
+            error = r.stoppedReason;
+            break;
+          }
+          if (r.remaining === 0 || r.nextAfter === after) break;
+          after = r.nextAfter;
+        }
+      } catch (e) {
+        error = (e as Error).message;
+      }
+      setState({ running: false, done, total, error });
+      await Promise.all([invalidateLibrary(qc), qc.invalidateQueries({ queryKey: ['movie'] })]);
+    },
+    [qc],
+  );
+
+  return { ...state, run };
 }

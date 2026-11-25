@@ -82,7 +82,7 @@ export const listQuerySchema = z.object({
   minRating: optionalNumber(z.coerce.number().min(0).max(10)),
   maxRating: optionalNumber(z.coerce.number().min(0).max(10)),
   section: optionalNumber(z.coerce.number().int().positive()),
-  sort: z.preprocess(blankToUndefined, z.enum(['rating', 'release', 'title', 'added', 'reviewed']).default('added')),
+  sort: z.preprocess(blankToUndefined, z.enum(['rating', 'release', 'title', 'added', 'reviewed', 'imdbGap']).default('added')),
   order: z.preprocess(blankToUndefined, z.enum(['asc', 'desc']).optional()),
   limit: optionalNumber(z.coerce.number().int().min(1).max(500)),
 });

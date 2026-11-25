@@ -28,6 +28,14 @@ interface MovieRow {
   genres_json: string;
   sections_json: string;
   aspects_json: string;
+  ext_fetched_at: string | null;
+  ext_imdb_id: string | null;
+  ext_imdb: number | null;
+  ext_imdb_votes: number | null;
+  ext_rt: number | null;
+  ext_mc: number | null;
+  ext_tmdb: number | null;
+  ext_tmdb_votes: number | null;
 }
 
 /** Fields that can be written to the movie itself (normalized, null = clear). */
@@ -69,10 +77,19 @@ const MOVIE_SELECT = `
     (SELECT json_group_array(json_object('id', s.id, 'name', s.name, 'position', s.position))
        FROM movie_sections ms JOIN sections s ON s.id = ms.section_id
       WHERE ms.movie_id = m.id) AS sections_json,
-    (SELECT json_group_object(ar.aspect, ar.score) FROM aspect_ratings ar WHERE ar.movie_id = m.id) AS aspects_json
+    (SELECT json_group_object(ar.aspect, ar.score) FROM aspect_ratings ar WHERE ar.movie_id = m.id) AS aspects_json,
+    er.fetched_at      AS ext_fetched_at,
+    er.imdb_id         AS ext_imdb_id,
+    er.imdb_rating     AS ext_imdb,
+    er.imdb_votes      AS ext_imdb_votes,
+    er.rotten_tomatoes AS ext_rt,
+    er.metacritic      AS ext_mc,
+    er.tmdb_rating     AS ext_tmdb,
+    er.tmdb_votes      AS ext_tmdb_votes
   FROM movies m
   LEFT JOIN ratings rt ON rt.movie_id = m.id
-  LEFT JOIN reviews rv ON rv.movie_id = m.id`;
+  LEFT JOIN reviews rv ON rv.movie_id = m.id
+  LEFT JOIN external_ratings er ON er.movie_id = m.id`;
 
 function toMovie(r: MovieRow): Movie {
   const genres = (JSON.parse(r.genres_json) as string[]).sort((a, b) => a.localeCompare(b));
@@ -94,6 +111,19 @@ function toMovie(r: MovieRow): Movie {
     rating: r.rating,
     ratedAt: r.rated_at,
     aspectRatings: JSON.parse(r.aspects_json) as AspectRatings,
+    externalRatings:
+      r.ext_fetched_at === null
+        ? null
+        : {
+            imdbId: r.ext_imdb_id,
+            imdb: r.ext_imdb,
+            imdbVotes: r.ext_imdb_votes,
+            rottenTomatoes: r.ext_rt,
+            metacritic: r.ext_mc,
+            tmdb: r.ext_tmdb,
+            tmdbVotes: r.ext_tmdb_votes,
+            fetchedAt: r.ext_fetched_at,
+          },
     review:
       r.review_id === null
         ? null
@@ -273,6 +303,8 @@ export function createMoviesRepository(db: DB, sections: SectionsRepository) {
         title: `m.title COLLATE NOCASE ${dir}`,
         added: `m.created_at ${dir}, m.id ${dir}`,
         reviewed: `(last_reviewed_at IS NULL), last_reviewed_at ${dir}, ${byTitle}`,
+        // Your rating minus IMDb's: "desc" puts the films you rate most above IMDb first.
+        imdbGap: `(rt.score IS NULL OR er.imdb_rating IS NULL), (rt.score - er.imdb_rating) ${dir}, ${byTitle}`,
       }[sort];
 
       let sql = `${MOVIE_SELECT} ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY ${orderBy}`;

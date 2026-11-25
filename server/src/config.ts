@@ -10,6 +10,7 @@ export interface AppConfig {
   host: string;
   databasePath: string;
   tmdbToken: string | null;
+  omdbApiKey: string | null;
   clientDistPath: string;
 }
 
@@ -33,6 +34,7 @@ export function loadConfig(): AppConfig {
     host: process.env.HOST?.trim() || '127.0.0.1',
     databasePath,
     tmdbToken: process.env.TMDB_API_TOKEN?.trim() || null,
+    omdbApiKey: process.env.OMDB_API_KEY?.trim() || null,
     clientDistPath: path.join(repoRoot, 'client', 'dist'),
   };
 }

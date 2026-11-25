@@ -8,6 +8,7 @@ import { ConfirmDialog } from '../components/Modal';
 import { Poster } from '../components/Poster';
 import { RatingRing } from '../components/Rating';
 import { AspectBreakdown } from '../components/AspectRatings';
+import { ExternalScores } from '../components/ExternalScores';
 import { SectionPicker } from '../components/SectionPicker';
 import { SpoilerText } from '../components/SpoilerText';
 import { hasSpoilers } from '../lib/spoilers';
@@ -115,6 +116,10 @@ export function MovieDetailPage() {
                 <AspectBreakdown ratings={movie.aspectRatings} />
               </div>
             )}
+
+            <div className="mt-6">
+              <ExternalScores movie={movie} />
+            </div>
 
             <div className="mt-8">
               <p className="label">Sections</p>

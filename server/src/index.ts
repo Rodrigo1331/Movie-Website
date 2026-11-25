@@ -2,12 +2,14 @@ import { buildApp } from './app.ts';
 import { loadConfig } from './config.ts';
 import { openDatabase } from './db/database.ts';
 import { createTmdbClient } from './modules/tmdb/client.ts';
+import { createOmdbClient } from './modules/external/omdb.ts';
 
 const config = loadConfig();
 const db = openDatabase(config.databasePath);
 const app = await buildApp({
   db,
   tmdb: createTmdbClient({ token: config.tmdbToken }),
+  omdb: createOmdbClient({ apiKey: config.omdbApiKey }),
   clientDistPath: config.clientDistPath,
   logger: { level: 'info' },
 });
@@ -15,6 +17,9 @@ const app = await buildApp({
 app.log.info(`Database: ${config.databasePath}`);
 if (!config.tmdbToken) {
   app.log.warn('TMDB_API_TOKEN is not set — TMDB search is disabled (manual entry still works). See README.');
+}
+if (!config.omdbApiKey) {
+  app.log.warn('OMDB_API_KEY is not set — IMDb / Rotten Tomatoes / Metacritic scores are disabled. See README.');
 }
 
 let shuttingDown = false;
