@@ -2,6 +2,7 @@ import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, EyeOff } from 'lucide-react';
 import type { AspectRatings, MovieInput } from '@moviesite/shared';
 import { AspectRatingsInput } from '../../components/AspectRatings';
+import { overallFromAspects } from '../../lib/aspects';
 import { GenreInput } from '../../components/GenreInput';
 import { Poster } from '../../components/Poster';
 import { RatingInput } from '../../components/RatingInput';
@@ -50,6 +51,9 @@ export const emptyMovieForm = (): MovieFormValues => ({
   sectionIds: [],
 });
 
+/** With a breakdown, the overall rating is derived from it; otherwise it's whatever was entered. */
+export const effectiveRating = (v: MovieFormValues) => (v.aspectsEnabled ? overallFromAspects(v.aspectRatings) ?? v.rating : v.rating);
+
 export function toMovieInput(v: MovieFormValues): MovieInput {
   const num = (s: string) => (s.trim() === '' ? null : Number(s));
   return {
@@ -63,7 +67,7 @@ export function toMovieInput(v: MovieFormValues): MovieInput {
     backdropUrl: v.backdropUrl.trim() || null,
     runtime: num(v.runtime),
     genres: v.genres,
-    rating: v.rating,
+    rating: effectiveRating(v),
     // Switching the option off clears any aspect scores that were saved before.
     aspectRatings: v.aspectsEnabled ? v.aspectRatings : {},
     review: v.review.trim() || null,
@@ -182,6 +186,7 @@ export function MovieForm({ initial, submitLabel, pending, onSubmit, onCancel, d
   const [v, setV] = useState(initial);
   const [errors, setErrors] = useState<ReturnType<typeof validate>>({});
   const [showDetails, setShowDetails] = useState(!detailsCollapsed);
+  const derived = v.aspectsEnabled && overallFromAspects(v.aspectRatings) !== null;
   const set = <K extends keyof MovieFormValues>(key: K, value: MovieFormValues[K]) => setV((prev) => ({ ...prev, [key]: value }));
 
   const submit = (e: FormEvent) => {
@@ -210,7 +215,8 @@ export function MovieForm({ initial, submitLabel, pending, onSubmit, onCancel, d
           <h2 className="font-display text-lg font-semibold text-ink-100">Your take</h2>
           <div>
             <span className="label">Rating</span>
-            <RatingInput value={v.rating} onChange={(r) => set('rating', r)} />
+            <RatingInput value={effectiveRating(v)} onChange={(r) => set('rating', r)} locked={derived} />
+            {derived && <p className="mt-1.5 text-xs text-ink-500">Calculated from your rating breakdown below.</p>}
             <label className="mt-3 inline-flex cursor-pointer items-center gap-2.5 text-sm text-ink-300 select-none hover:text-ink-100">
               <input
                 type="checkbox"
@@ -225,8 +231,6 @@ export function MovieForm({ initial, submitLabel, pending, onSubmit, onCancel, d
               <AspectRatingsInput
                 value={v.aspectRatings}
                 onChange={(next) => set('aspectRatings', next)}
-                overall={v.rating}
-                onUseAverage={(avg) => set('rating', avg)}
               />
             )}
           </div>

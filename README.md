@@ -22,8 +22,9 @@ to *Currently Watching* without removing it from Want to Watch.
 ### Aspect ratings
 
 Below the overall rating, tick **Rate aspects separately** to also score story/plot, characters, acting, soundtrack
-and enjoyment (0–10, each optional). The form shows their average with a one-click **Use as overall rating**, and the
-movie page shows a breakdown. Unticking the box removes the aspect scores when you save.
+and enjoyment (0–10, each optional). Once any aspect is rated, the overall rating is
+calculated automatically: the average of the rated aspects, rounded **up** to the next 0.5 (9.0 → 9, 9.1 → 9.5,
+9.6 → 10). The movie page shows the breakdown. Unticking the box removes the aspect scores when you save.
 
 ### Light / dark theme
 

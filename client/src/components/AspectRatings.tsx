@@ -1,14 +1,12 @@
 import { X } from 'lucide-react';
 import type { AspectRatings, RatingAspect } from '@moviesite/shared';
-import { ASPECTS, aspectAverage } from '../lib/aspects';
+import { ASPECTS, aspectMean, overallFromAspects } from '../lib/aspects';
 import { formatRating, ratingColor } from '../lib/format';
 
 /** Compact sliders for scoring each aspect separately (each one optional). */
 export function AspectRatingsInput(props: {
   value: AspectRatings;
   onChange: (next: AspectRatings) => void;
-  overall: number | null;
-  onUseAverage: (average: number) => void;
 }) {
   const { value, onChange } = props;
   const setAspect = (key: RatingAspect, score: number | null) => {
@@ -17,7 +15,8 @@ export function AspectRatingsInput(props: {
     else next[key] = Math.round(score * 10) / 10;
     onChange(next);
   };
-  const average = aspectAverage(value);
+  const mean = aspectMean(value);
+  const overall = overallFromAspects(value);
 
   return (
     <div className="mt-3 animate-fade-in space-y-3 rounded-xl border border-white/8 bg-ink-850 p-4">
@@ -51,20 +50,20 @@ export function AspectRatingsInput(props: {
           </div>
         );
       })}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/6 pt-3 text-xs text-ink-400">
-        <span>
-          Aspect average:{' '}
-          <strong className="font-semibold tabular-nums" style={{ color: average === null ? undefined : ratingColor(average) }}>
-            {average === null ? '–' : formatRating(average)}
-          </strong>
-          <span className="ml-1 text-ink-500">(unrated aspects are skipped)</span>
-        </span>
-        {average !== null && average !== props.overall && (
-          <button type="button" className="cursor-pointer font-semibold text-gold-400 hover:text-gold-300" onClick={() => props.onUseAverage(average)}>
-            Use as overall rating
-          </button>
+      <p className="border-t border-white/6 pt-3 text-xs text-ink-400">
+        {overall === null ? (
+          'Rate at least one aspect to calculate the overall rating. Unrated aspects are skipped.'
+        ) : (
+          <>
+            Average <strong className="font-semibold text-ink-200 tabular-nums">{mean!.toFixed(2).replace(/(\.\d)0$/, '$1')}</strong>, rounded up to the
+            next 0.5 → overall{' '}
+            <strong className="font-semibold tabular-nums" style={{ color: ratingColor(overall) }}>
+              {formatRating(overall)}
+            </strong>
+            . Unrated aspects are skipped.
+          </>
         )}
-      </div>
+      </p>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { formatRating, ratingColor, ratingLabel } from '../lib/format';
 
 /** 0–10 rating with 0.1 precision: slider + exact number input, or "no rating". */
-export function RatingInput({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+export function RatingInput({ value, onChange, locked = false }: { value: number | null; onChange: (v: number | null) => void; locked?: boolean }) {
   const [text, setText] = useState(value === null ? '' : formatRating(value));
   useEffect(() => setText(value === null ? '' : formatRating(value)), [value]);
 
@@ -15,7 +15,7 @@ export function RatingInput({ value, onChange }: { value: number | null; onChang
   };
 
   return (
-    <div className="rounded-xl border border-white/8 bg-ink-850 p-4">
+    <fieldset disabled={locked} className="rounded-xl border border-white/8 bg-ink-850 p-4 disabled:[&_input[type=range]]:cursor-default">
       <div className="flex items-center gap-4">
         <div className="w-24 shrink-0">
           <input
@@ -52,11 +52,11 @@ export function RatingInput({ value, onChange }: { value: number | null; onChang
           </div>
         </div>
       </div>
-      {value !== null && (
+      {value !== null && !locked && (
         <button type="button" className="mt-2 text-xs text-ink-500 hover:text-ink-200" onClick={() => onChange(null)}>
           Clear rating
         </button>
       )}
-    </div>
+    </fieldset>
   );
 }
