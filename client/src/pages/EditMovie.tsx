@@ -5,6 +5,7 @@ import { Page } from '../components/Layout';
 import { useToast } from '../components/Toast';
 import { ErrorState, PageLoader } from '../components/ui';
 import { MovieForm, type MovieFormValues } from '../features/movie-form/MovieForm';
+import { hasAspectRatings } from '../lib/aspects';
 import { formatRating } from '../lib/format';
 import { useDocumentTitle } from '../lib/hooks';
 
@@ -20,6 +21,8 @@ const toForm = (m: Movie): MovieFormValues => ({
   runtime: m.runtime ? String(m.runtime) : '',
   genres: m.genres,
   rating: m.rating === null ? null : Number(formatRating(m.rating)),
+  aspectsEnabled: hasAspectRatings(m.aspectRatings),
+  aspectRatings: m.aspectRatings,
   review: m.review?.body ?? '',
   dateWatched: m.review?.dateWatched ?? '',
   sectionIds: m.sections.map((s) => s.id),

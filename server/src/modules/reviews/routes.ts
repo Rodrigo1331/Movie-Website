@@ -8,8 +8,8 @@ export function reviewsRoutes(deps: { movies: MoviesRepository }) {
   return async (app: FastifyInstance) => {
     app.put('/movies/:id/review', async (req) => {
       const { id } = parse(idParamSchema, req.params);
-      const { rating, body, dateWatched } = parse(reviewInputSchema, req.body);
-      return movies.saveReview(id, rating, body, dateWatched ?? null);
+      const { rating, body, dateWatched, aspectRatings } = parse(reviewInputSchema, req.body);
+      return movies.saveReview(id, rating, body, dateWatched ?? null, aspectRatings);
     });
 
     app.delete('/movies/:id/review', async (req) => movies.deleteReview(parse(idParamSchema, req.params).id));

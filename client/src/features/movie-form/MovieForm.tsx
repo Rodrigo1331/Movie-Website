@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, EyeOff } from 'lucide-react';
-import type { MovieInput } from '@moviesite/shared';
+import type { AspectRatings, MovieInput } from '@moviesite/shared';
+import { AspectRatingsInput } from '../../components/AspectRatings';
 import { GenreInput } from '../../components/GenreInput';
 import { Poster } from '../../components/Poster';
 import { RatingInput } from '../../components/RatingInput';
@@ -22,6 +23,9 @@ export interface MovieFormValues {
   runtime: string;
   genres: string[];
   rating: number | null;
+  /** Whether the "rate aspects separately" option is switched on. */
+  aspectsEnabled: boolean;
+  aspectRatings: AspectRatings;
   review: string;
   dateWatched: string;
   sectionIds: number[];
@@ -39,6 +43,8 @@ export const emptyMovieForm = (): MovieFormValues => ({
   runtime: '',
   genres: [],
   rating: null,
+  aspectsEnabled: false,
+  aspectRatings: {},
   review: '',
   dateWatched: '',
   sectionIds: [],
@@ -58,6 +64,8 @@ export function toMovieInput(v: MovieFormValues): MovieInput {
     runtime: num(v.runtime),
     genres: v.genres,
     rating: v.rating,
+    // Switching the option off clears any aspect scores that were saved before.
+    aspectRatings: v.aspectsEnabled ? v.aspectRatings : {},
     review: v.review.trim() || null,
     dateWatched: v.dateWatched || null,
     sectionIds: v.sectionIds,
@@ -203,6 +211,24 @@ export function MovieForm({ initial, submitLabel, pending, onSubmit, onCancel, d
           <div>
             <span className="label">Rating</span>
             <RatingInput value={v.rating} onChange={(r) => set('rating', r)} />
+            <label className="mt-3 inline-flex cursor-pointer items-center gap-2.5 text-sm text-ink-300 select-none hover:text-ink-100">
+              <input
+                type="checkbox"
+                className="size-4 cursor-pointer accent-gold-500"
+                checked={v.aspectsEnabled}
+                onChange={(e) => set('aspectsEnabled', e.target.checked)}
+              />
+              Rate aspects separately
+              <span className="text-xs text-ink-500">(story, characters, acting, soundtrack, enjoyment)</span>
+            </label>
+            {v.aspectsEnabled && (
+              <AspectRatingsInput
+                value={v.aspectRatings}
+                onChange={(next) => set('aspectRatings', next)}
+                overall={v.rating}
+                onUseAverage={(avg) => set('rating', avg)}
+              />
+            )}
           </div>
           <div className="grid gap-5 sm:grid-cols-[200px_1fr]">
             <Field label="Date watched" error={errors.dateWatched}>

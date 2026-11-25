@@ -34,6 +34,14 @@ export const ratingSchema = z
   .max(10, 'Rating must be between 0 and 10')
   .transform((v) => Math.round(v * 10) / 10);
 
+export const RATING_ASPECTS = ['story', 'characters', 'acting', 'soundtrack', 'enjoyment'] as const;
+
+/** Per-aspect scores; null entries mean "not rated" and are dropped. */
+export const aspectRatingsSchema = z
+  .partialRecord(z.enum(RATING_ASPECTS), ratingSchema.nullable())
+  .nullable()
+  .transform((obj) => Object.fromEntries(Object.entries(obj ?? {}).filter(([, v]) => v != null)) as Record<string, number>);
+
 const idList = z.array(z.number().int().positive()).max(200);
 
 export const movieInputSchema = z.object({
@@ -48,6 +56,7 @@ export const movieInputSchema = z.object({
   runtime: z.number().int().min(0).max(2000).nullable().optional(),
   genres: z.array(z.string().trim().min(1).max(50)).max(20).optional(),
   rating: ratingSchema.nullable().optional(),
+  aspectRatings: aspectRatingsSchema.optional(),
   review: nullableText(20000),
   dateWatched: nullableDate,
   sectionIds: idList.optional(),
@@ -57,6 +66,7 @@ export const movieUpdateSchema = movieInputSchema.partial();
 
 export const reviewInputSchema = z.object({
   rating: ratingSchema.nullable(),
+  aspectRatings: aspectRatingsSchema.optional(),
   body: z.string().max(20000).default(''),
   dateWatched: nullableDate,
 });

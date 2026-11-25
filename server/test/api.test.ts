@@ -225,6 +225,43 @@ describe('movies & reviews', () => {
   });
 });
 
+describe('aspect ratings', () => {
+  let app: App;
+  before(async () => ({ app } = await setup()));
+  after(() => app.close());
+
+  test('stores, replaces and clears per-aspect scores', async () => {
+    const created = await call<Movie>(app, 'POST', '/api/movies', {
+      title: 'Heat',
+      rating: 9,
+      aspectRatings: { story: 8.75, acting: 9.5, soundtrack: null },
+    });
+    assert.equal(created.status, 201);
+    assert.deepEqual(created.body.aspectRatings, { story: 8.8, acting: 9.5 });
+
+    const plain = await call<Movie>(app, 'POST', '/api/movies', { title: 'No aspects' });
+    assert.deepEqual(plain.body.aspectRatings, {});
+
+    const id = created.body.id;
+    const patched = await call<Movie>(app, 'PATCH', `/api/movies/${id}`, { aspectRatings: { enjoyment: 10 } });
+    assert.deepEqual(patched.body.aspectRatings, { enjoyment: 10 });
+
+    const untouched = await call<Movie>(app, 'PATCH', `/api/movies/${id}`, { title: 'Heat (1995)' });
+    assert.deepEqual(untouched.body.aspectRatings, { enjoyment: 10 });
+
+    const bad = await call(app, 'PATCH', `/api/movies/${id}`, { aspectRatings: { vibes: 5 } });
+    assert.equal(bad.status, 400);
+    const outOfRange = await call(app, 'PATCH', `/api/movies/${id}`, { aspectRatings: { story: 11 } });
+    assert.equal(outOfRange.status, 400);
+
+    const viaReview = await call<Movie>(app, 'PUT', `/api/movies/${id}/review`, { rating: 8, body: '', dateWatched: null, aspectRatings: { characters: 7 } });
+    assert.deepEqual(viaReview.body.aspectRatings, { characters: 7 });
+
+    const removed = await call<Movie>(app, 'DELETE', `/api/movies/${id}/review`);
+    assert.deepEqual(removed.body.aspectRatings, {});
+  });
+});
+
 describe('persistence', () => {
   test('data survives closing and reopening the database file', async () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'moviesite-'));

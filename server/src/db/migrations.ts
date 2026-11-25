@@ -88,6 +88,18 @@ export const migrations: Migration[] = [
         ('Currently Watching', 'currently-watching', 4, 1);
     `,
   },
+  {
+    version: 2,
+    name: 'aspect_ratings',
+    sql: `
+      CREATE TABLE aspect_ratings (
+        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+        aspect   TEXT    NOT NULL,
+        score    REAL    NOT NULL CHECK (score >= 0 AND score <= 10),
+        PRIMARY KEY (movie_id, aspect)
+      ) WITHOUT ROWID;
+    `,
+  },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

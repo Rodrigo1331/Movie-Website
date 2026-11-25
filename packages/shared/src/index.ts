@@ -13,6 +13,12 @@ export interface Section extends SectionRef {
   createdAt: string;
 }
 
+/** Aspects that can be rated separately from the overall score. */
+export type RatingAspect = 'story' | 'characters' | 'acting' | 'soundtrack' | 'enjoyment';
+
+/** Optional per-aspect scores (0–10). Unrated aspects are simply absent. */
+export type AspectRatings = Partial<Record<RatingAspect, number>>;
+
 export interface Review {
   body: string;
   dateWatched: string | null;
@@ -34,6 +40,7 @@ export interface Movie {
   genres: string[];
   rating: number | null;
   ratedAt: string | null;
+  aspectRatings: AspectRatings;
   review: Review | null;
   sections: SectionRef[];
   lastReviewedAt: string | null;
@@ -54,6 +61,8 @@ export interface MovieInput {
   runtime?: number | null;
   genres?: string[];
   rating?: number | null;
+  /** Replaces all aspect scores; `{}` or null clears them. */
+  aspectRatings?: AspectRatings | null;
   review?: string | null;
   dateWatched?: string | null;
   sectionIds?: number[];
@@ -63,6 +72,7 @@ export type MovieUpdate = Partial<MovieInput>;
 
 export interface ReviewInput {
   rating: number | null;
+  aspectRatings?: AspectRatings | null;
   body: string;
   dateWatched: string | null;
 }

@@ -6,7 +6,7 @@ import type { MovieChanges, MovieFields, MoviesRepository } from './repository.t
 type MovieInput = z.output<typeof movieInputSchema>;
 
 function splitInput(input: MovieInput): { fields: MovieFields; relations: MovieChanges } {
-  const { genres, rating, review, dateWatched, sectionIds, ...f } = input;
+  const { genres, rating, aspectRatings, review, dateWatched, sectionIds, ...f } = input;
   return {
     fields: {
       tmdbId: f.tmdbId ?? null,
@@ -19,7 +19,7 @@ function splitInput(input: MovieInput): { fields: MovieFields; relations: MovieC
       backdropUrl: f.backdropUrl ?? null,
       runtime: f.runtime ?? null,
     },
-    relations: { genres: genres ?? [], rating: rating ?? null, review, dateWatched, sectionIds: sectionIds ?? [] },
+    relations: { genres: genres ?? [], rating: rating ?? null, aspectRatings, review, dateWatched, sectionIds: sectionIds ?? [] },
   };
 }
 

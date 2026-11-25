@@ -7,6 +7,7 @@ import { Page } from '../components/Layout';
 import { ConfirmDialog } from '../components/Modal';
 import { Poster } from '../components/Poster';
 import { RatingRing } from '../components/Rating';
+import { AspectBreakdown } from '../components/AspectRatings';
 import { SectionPicker } from '../components/SectionPicker';
 import { SpoilerText } from '../components/SpoilerText';
 import { hasSpoilers } from '../lib/spoilers';
@@ -108,6 +109,12 @@ export function MovieDetailPage() {
                 </button>
               </div>
             </div>
+
+            {Object.keys(movie.aspectRatings).length > 0 && (
+              <div className="mt-6 max-w-md">
+                <AspectBreakdown ratings={movie.aspectRatings} />
+              </div>
+            )}
 
             <div className="mt-8">
               <p className="label">Sections</p>

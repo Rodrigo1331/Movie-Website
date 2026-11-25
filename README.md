@@ -19,6 +19,12 @@ toggle. The dashboard quote keeps spoilers hidden too.
 fair and unbiased. "Don't repeat picks" cycles through every film before any repeats. **Watch it now** adds the winner
 to *Currently Watching* without removing it from Want to Watch.
 
+### Aspect ratings
+
+Below the overall rating, tick **Rate aspects separately** to also score story/plot, characters, acting, soundtrack
+and enjoyment (0–10, each optional). The form shows their average with a one-click **Use as overall rating**, and the
+movie page shows a breakdown. Unticking the box removes the aspect scores when you save.
+
 ### Light / dark theme
 
 The sun/moon button in the header switches between the dark (default) and light theme. Your choice is saved in the
@@ -101,9 +107,10 @@ are tracked in `schema_migrations`.
 | `genres`, `movie_genres` | Genres (case-insensitive unique) and the many-to-many link |
 | `ratings` | One score per movie, `REAL` with `CHECK (0 ≤ score ≤ 10)` |
 | `reviews` | One written review per movie, plus the date watched |
+| `aspect_ratings` | Optional per-aspect scores (story, characters, acting, soundtrack, enjoyment), 0–10 |
 | `sections`, `movie_sections` | Custom sections (ordered) and many-to-many membership |
 
-Deleting a movie cascades to its rating, review, genres links and section memberships. Deleting a section only
+Deleting a movie cascades to its rating, aspect scores, review, genres links and section memberships. Deleting a section only
 removes the section; its movies stay in your library. The five default sections are seeded once, and you can rename
 or delete them.
 

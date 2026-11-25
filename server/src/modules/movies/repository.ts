@@ -1,5 +1,5 @@
 import type { SQLInputValue } from 'node:sqlite';
-import type { LibraryFacets, Movie, MovieListQuery, SectionRef } from '@moviesite/shared';
+import type { AspectRatings, LibraryFacets, Movie, MovieListQuery, SectionRef } from '@moviesite/shared';
 import { nowIso, transaction, type DB } from '../../db/database.ts';
 import { conflict, notFound } from '../../lib/errors.ts';
 import type { SectionsRepository } from '../sections/repository.ts';
@@ -27,6 +27,7 @@ interface MovieRow {
   last_reviewed_at: string | null;
   genres_json: string;
   sections_json: string;
+  aspects_json: string;
 }
 
 /** Fields that can be written to the movie itself (normalized, null = clear). */
@@ -45,6 +46,7 @@ export interface MovieFields {
 export interface MovieChanges extends Partial<MovieFields> {
   genres?: string[];
   rating?: number | null;
+  aspectRatings?: AspectRatings;
   review?: string | null;
   dateWatched?: string | null;
   sectionIds?: number[];
@@ -66,7 +68,8 @@ const MOVIE_SELECT = `
       WHERE mg.movie_id = m.id) AS genres_json,
     (SELECT json_group_array(json_object('id', s.id, 'name', s.name, 'position', s.position))
        FROM movie_sections ms JOIN sections s ON s.id = ms.section_id
-      WHERE ms.movie_id = m.id) AS sections_json
+      WHERE ms.movie_id = m.id) AS sections_json,
+    (SELECT json_group_object(ar.aspect, ar.score) FROM aspect_ratings ar WHERE ar.movie_id = m.id) AS aspects_json
   FROM movies m
   LEFT JOIN ratings rt ON rt.movie_id = m.id
   LEFT JOIN reviews rv ON rv.movie_id = m.id`;
@@ -90,6 +93,7 @@ function toMovie(r: MovieRow): Movie {
     genres,
     rating: r.rating,
     ratedAt: r.rated_at,
+    aspectRatings: JSON.parse(r.aspects_json) as AspectRatings,
     review:
       r.review_id === null
         ? null
@@ -172,6 +176,14 @@ export function createMoviesRepository(db: DB, sections: SectionsRepository) {
     ).run(movieId, score, nowIso());
   }
 
+  function setAspectRatings(movieId: number, scores: AspectRatings) {
+    db.prepare('DELETE FROM aspect_ratings WHERE movie_id = ?').run(movieId);
+    const insert = db.prepare('INSERT INTO aspect_ratings (movie_id, aspect, score) VALUES (?, ?, ?)');
+    for (const [aspect, score] of Object.entries(scores)) {
+      if (score != null) insert.run(movieId, aspect, score);
+    }
+  }
+
   function setReview(movieId: number, body: string, dateWatched: string | null) {
     const text = body.trim();
     if (!text && !dateWatched) {
@@ -205,6 +217,7 @@ export function createMoviesRepository(db: DB, sections: SectionsRepository) {
   function applyRelations(movieId: number, changes: MovieChanges, existing: Movie | null) {
     if (changes.genres !== undefined) setGenres(movieId, changes.genres);
     if (changes.rating !== undefined) setRating(movieId, changes.rating);
+    if (changes.aspectRatings !== undefined) setAspectRatings(movieId, changes.aspectRatings);
     if (changes.review !== undefined || changes.dateWatched !== undefined) {
       const body = changes.review !== undefined ? changes.review ?? '' : existing?.review?.body ?? '';
       const watched = changes.dateWatched !== undefined ? changes.dateWatched : existing?.review?.dateWatched ?? null;
@@ -327,10 +340,11 @@ export function createMoviesRepository(db: DB, sections: SectionsRepository) {
       });
     },
 
-    saveReview(id: number, rating: number | null, body: string, dateWatched: string | null): Movie {
+    saveReview(id: number, rating: number | null, body: string, dateWatched: string | null, aspectRatings?: AspectRatings): Movie {
       return transaction(db, () => {
         get(id);
         setRating(id, rating);
+        if (aspectRatings !== undefined) setAspectRatings(id, aspectRatings);
         setReview(id, body, dateWatched);
         return get(id);
       });
@@ -340,6 +354,7 @@ export function createMoviesRepository(db: DB, sections: SectionsRepository) {
       return transaction(db, () => {
         get(id);
         db.prepare('DELETE FROM ratings WHERE movie_id = ?').run(id);
+        db.prepare('DELETE FROM aspect_ratings WHERE movie_id = ?').run(id);
         db.prepare('DELETE FROM reviews WHERE movie_id = ?').run(id);
         return get(id);
       });
